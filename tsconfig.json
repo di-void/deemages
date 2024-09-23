@@ -11,7 +11,7 @@
     "resolveJsonModule": true,
     "moduleDetection": "force",
     "isolatedModules": true,
-    "verbatimModuleSyntax": true,
+    // "verbatimModuleSyntax": true,
     // Enable strict type checking so you can catch bugs early
     "strict": true,
     "noUncheckedIndexedAccess": true,
@@ -19,6 +19,7 @@
     // Transpile our TypeScript code to JavaScript
     "module": "NodeNext",
     "outDir": "dist",
+    "rootDir": "./src",
     "lib": [
       "es2022"
     ]
