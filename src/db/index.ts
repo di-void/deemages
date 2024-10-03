@@ -1,4 +1,5 @@
-// NOTE:
-// create indexes on the `username` field on User model (for auth purposes)
-// `user_id` field on the Image model should be indexed to optimize image-fetching queries for users
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import Database from "better-sqlite3";
 
+const sqlite = new Database("sqlite.db");
+export const db = drizzle(sqlite);
