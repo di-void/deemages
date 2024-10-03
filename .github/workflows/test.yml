@@ -1,7 +1,8 @@
 name: learn-gh-actions
 run-name: ${{ github.actor }} is learning Github Actions
 
-on: [push]
+# don't run, thank you
+on: [fork]
 
 jobs:
   check-bats-version:
