@@ -35,10 +35,10 @@ export const image = sqliteTable(
   {
     id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
     storagePath: text("storage_path").notNull(),
-    fileType: text("file_type", { enum: ["png", "jpeg"] }).$type<
-      "png" | "customer"
-    >(),
-    fileSize: integer("file_size", { mode: "number" }),
+    fileType: text("file_type", { enum: ["png", "jpeg"] })
+      .$type<"png" | "customer">()
+      .notNull(),
+    fileSize: integer("file_size", { mode: "number" }).notNull(),
     dimensions: text("dimensions").$type<Dimension>(),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
@@ -47,7 +47,9 @@ export const image = sqliteTable(
       .notNull()
       .default(sql`(unixepoch())`)
       .$onUpdate(() => sql`(unixepoch())`),
-    userId: integer("user_id").references(() => user.id),
+    userId: integer("user_id")
+      .references(() => user.id)
+      .notNull(),
   },
   // optimize image-fetching queries for users
   (table) => ({ userIdIdx: index("user_id_idx").on(table.userId) })
