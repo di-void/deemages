@@ -1,39 +1,52 @@
-// NOTE:
-// create indexes on the `username` field on User model (for auth purposes)
-// `user_id` field on the Image model should be indexed to optimize image-fetching queries for users
-
 import { sql } from "drizzle-orm";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+  integer,
+  sqliteTable,
+  text,
+  uniqueIndex,
+  index,
+} from "drizzle-orm/sqlite-core";
 
-export const users = sqliteTable("users", {
-  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-  username: text("username").unique().notNull(),
-  password: text("password").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`)
-    .$onUpdate(() => sql`(unixepoch())`),
-});
+export const user = sqliteTable(
+  "users",
+  {
+    id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+    username: text("username").notNull(),
+    password: text("password").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`)
+      .$onUpdate(() => sql`(unixepoch())`),
+  },
+  // for auth purposes
+  (table) => ({ usernameIdx: uniqueIndex("username_idx").on(table.username) })
+);
 
 type Dimension = {
   width: number;
   height: number;
 };
 
-export const images = sqliteTable("images", {
-  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-  storage_path: text("storage_path").notNull(),
-  fileType: text("file_type", { enum: ["png", "jpeg"] }),
-  fileSize: integer("file_size", { mode: "number" }),
-  dimensions: text("dimensions").$type<Dimension>(),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`)
-    .$onUpdate(() => sql`(unixepoch())`),
-});
+export const image = sqliteTable(
+  "images",
+  {
+    id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+    storagePath: text("storage_path").notNull(),
+    fileType: text("file_type", { enum: ["png", "jpeg"] }),
+    fileSize: integer("file_size", { mode: "number" }),
+    dimensions: text("dimensions").$type<Dimension>(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`)
+      .$onUpdate(() => sql`(unixepoch())`),
+    userId: integer("user_id").references(() => user.id),
+  },
+  // optimize image-fetching queries for users
+  (table) => ({ userIdIdx: index("user_id_idx").on(table.userId) })
+);
