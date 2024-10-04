@@ -54,3 +54,11 @@ export const image = sqliteTable(
   // optimize image-fetching queries for users
   (table) => ({ userIdIdx: index("user_id_idx").on(table.userId) })
 );
+
+export const session = sqliteTable("sessions", {
+  id: text("id").primaryKey(),
+  expiresAt: integer("expires_at").notNull(),
+  userId: integer("user_id")
+    .references(() => user.id, { onDelete: "cascade" })
+    .notNull(),
+});
