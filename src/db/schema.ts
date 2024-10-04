@@ -35,7 +35,9 @@ export const image = sqliteTable(
   {
     id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
     storagePath: text("storage_path").notNull(),
-    fileType: text("file_type", { enum: ["png", "jpeg"] }),
+    fileType: text("file_type", { enum: ["png", "jpeg"] }).$type<
+      "png" | "customer"
+    >(),
     fileSize: integer("file_size", { mode: "number" }),
     dimensions: text("dimensions").$type<Dimension>(),
     createdAt: integer("created_at", { mode: "timestamp" })
