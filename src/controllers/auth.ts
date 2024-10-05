@@ -1,10 +1,12 @@
 import { Request, Response } from "express";
+import { SqliteError } from "better-sqlite3";
 import { User } from "../utils/validators";
 import { lucia } from "../utils/lucia";
 import { db } from "../db/index";
 import { user } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { verify, hash } from "@node-rs/argon2";
+import { ZodError } from "zod";
 
 const argonConfig = {
   memoryCost: 19456,
@@ -16,7 +18,7 @@ const argonConfig = {
 export async function register(req: Request, res: Response) {
   const parseResult = User.safeParse(req.body);
 
-  if (parseResult.error) {
+  if (!parseResult.success) {
     return res.status(422).json({ message: "error", error: "Malformed data" });
   }
 
@@ -42,8 +44,20 @@ export async function register(req: Request, res: Response) {
       .status(200)
       .json({ message: "success", data: { sessionId: session.id } });
   } catch (error) {
+    if (
+      error instanceof SqliteError &&
+      error.code === "SQLITE_CONSTRAINT_UNIQUE"
+    ) {
+      return res
+        .status(400)
+        .json({ message: "error", data: { error: "Username already exists" } });
+    }
+
     console.log("Error:", error);
-    throw error;
+
+    return res
+      .status(500)
+      .json({ message: "error", data: { error: "An unknown error occured" } });
   }
 }
 
@@ -53,7 +67,7 @@ export async function login(req: Request, res: Response) {
   if (!parseResult.success) {
     return res
       .status(400)
-      .json({ message: "error", data: parseResult.error.message });
+      .json({ message: "error", data: formatZodError(parseResult.error) });
   }
 
   const data = parseResult.data;
@@ -93,7 +107,9 @@ export async function login(req: Request, res: Response) {
       .json({ message: "success", data: { sessionId: session.id } });
   } catch (error) {
     console.log("Error:", error);
-    throw error;
+    return res
+      .status(500)
+      .json({ message: "error", data: { error: "An unknown error occured" } });
   }
 }
 
@@ -106,4 +122,10 @@ export async function logout(req: Request, res: Response) {
   await lucia.invalidateSession(sessionId);
 
   return res.status(200).json({ message: "success", data: null });
+}
+
+function formatZodError(
+  error: ZodError<{ username: string; password: string }>
+) {
+  return error.issues.map(({ message, path }) => ({ message, path }));
 }
