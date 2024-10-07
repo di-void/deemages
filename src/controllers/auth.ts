@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { SqliteError } from "better-sqlite3";
-import { User } from "../utils/validators";
+import { CreateUser } from "../utils/validators";
 import { lucia } from "../utils/lucia";
 import { formatRegularErrorMessage } from "../utils/helpers";
 import { db } from "../db/index";
@@ -19,7 +19,7 @@ const argonConfig = {
 // TODO: job to peridically clean up expired tokens from db
 
 export async function register(req: Request, res: Response) {
-  const parseResult = User.safeParse(req.body);
+  const parseResult = CreateUser.safeParse(req.body);
 
   if (!parseResult.success) {
     return res
@@ -70,7 +70,7 @@ export async function register(req: Request, res: Response) {
 }
 
 export async function login(req: Request, res: Response) {
-  const parseResult = User.safeParse(req.body);
+  const parseResult = CreateUser.safeParse(req.body);
 
   if (!parseResult.success) {
     return res

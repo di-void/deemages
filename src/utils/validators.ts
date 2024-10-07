@@ -1,16 +1,21 @@
 import zod from "zod";
 
-export const User = zod.object({
+export const CreateUser = zod.object({
   username: zod.string().min(1),
   password: zod.string().min(1),
 });
 
+export type CreateUserType = zod.infer<typeof CreateUser>;
+
+export const User = zod.object({
+  id: zod.number().gt(0),
+  username: zod.string().min(1),
+});
+
 export type UserType = zod.infer<typeof User>;
 
-const UserId = zod.number().gt(0);
-
 export const UploadImage = zod.object({
-  userId: UserId,
+  user: User,
   // more to come
 });
 

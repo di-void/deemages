@@ -12,7 +12,7 @@ export function upload(req: Request, res: Response) {
     });
   }
 
-  const body = result.data;
+  const { user } = result.data;
 
-  res.status(200).json({ message: `hello images, from ${body.userId}` });
+  res.status(200).json({ message: `hello images, from ${user.username}` });
 }

@@ -13,15 +13,15 @@ export async function authMiddleware(
     return res.status(401).end();
   }
 
-  // validate the session id
   try {
+    // validate session id
     const { session, user } = await lucia.validateSession(sessionId);
 
     if (!user || !session) {
       return res.status(401).end();
     }
 
-    req.body.userId = user.id;
+    req.body.user = { ...user };
 
     next();
   } catch (error) {
