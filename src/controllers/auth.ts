@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { SqliteError } from "better-sqlite3";
 import { User } from "../utils/validators";
 import { lucia } from "../utils/lucia";
+import { formatRegularErrorMessage } from "../utils/helpers";
 import { db } from "../db/index";
 import { user } from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -14,6 +15,8 @@ const argonConfig = {
   outputLen: 32,
   parallelism: 1,
 };
+
+// TODO: job to peridically clean up expired tokens from db
 
 export async function register(req: Request, res: Response) {
   const parseResult = User.safeParse(req.body);
@@ -36,12 +39,10 @@ export async function register(req: Request, res: Response) {
 
     const newUser = result[0];
     if (!newUser) {
-      return res
-        .status(500)
-        .json({
-          status: "error",
-          error: formatRegularErrorMessage("something went wrong"),
-        });
+      return res.status(500).json({
+        status: "error",
+        error: formatRegularErrorMessage("something went wrong"),
+      });
     }
 
     const session = await lucia.createSession(newUser.insertedId, {});
@@ -53,22 +54,18 @@ export async function register(req: Request, res: Response) {
       error instanceof SqliteError &&
       error.code === "SQLITE_CONSTRAINT_UNIQUE"
     ) {
-      return res
-        .status(400)
-        .json({
-          status: "error",
-          error: formatRegularErrorMessage("Username already exists"),
-        });
+      return res.status(400).json({
+        status: "error",
+        error: formatRegularErrorMessage("Username already exists"),
+      });
     }
 
     console.log("Error:", error);
 
-    return res
-      .status(500)
-      .json({
-        status: "error",
-        error: formatRegularErrorMessage("An unknown error occured"),
-      });
+    return res.status(500).json({
+      status: "error",
+      error: formatRegularErrorMessage("An unknown error occured"),
+    });
   }
 }
 
@@ -93,12 +90,10 @@ export async function login(req: Request, res: Response) {
     const dbUser = result[0];
 
     if (!dbUser) {
-      return res
-        .status(400)
-        .json({
-          status: "error",
-          error: formatRegularErrorMessage("Invalid username or password"),
-        });
+      return res.status(400).json({
+        status: "error",
+        error: formatRegularErrorMessage("Invalid username or password"),
+      });
     }
 
     // validate password
@@ -109,12 +104,10 @@ export async function login(req: Request, res: Response) {
     );
 
     if (!isValidPassword) {
-      return res
-        .status(400)
-        .json({
-          status: "error",
-          error: formatRegularErrorMessage("Invalid username or password"),
-        });
+      return res.status(400).json({
+        status: "error",
+        error: formatRegularErrorMessage("Invalid username or password"),
+      });
     }
 
     const session = await lucia.createSession(dbUser.id, {});
@@ -124,12 +117,10 @@ export async function login(req: Request, res: Response) {
       .json({ status: "success", data: { sessionId: session.id } });
   } catch (error) {
     console.log("Error:", error);
-    return res
-      .status(500)
-      .json({
-        status: "error",
-        error: formatRegularErrorMessage("An unknown error occured"),
-      });
+    return res.status(500).json({
+      status: "error",
+      error: formatRegularErrorMessage("An unknown error occured"),
+    });
   }
 }
 
@@ -148,8 +139,4 @@ function formatZodError(
   error: ZodError<{ username: string; password: string }>
 ) {
   return error.issues.map(({ message, path }) => ({ message, path }));
-}
-
-function formatRegularErrorMessage(errorMsg: string) {
-  return [{ message: errorMsg }];
 }
