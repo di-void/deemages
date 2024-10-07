@@ -5,4 +5,13 @@ export const User = zod.object({
   password: zod.string().min(1),
 });
 
-export type User = zod.infer<typeof User>;
+export type UserType = zod.infer<typeof User>;
+
+const UserId = zod.number().gt(0);
+
+export const UploadImage = zod.object({
+  userId: UserId,
+  // more to come
+});
+
+export type UploadImageType = zod.infer<typeof UploadImage>;
