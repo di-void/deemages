@@ -19,7 +19,9 @@ export async function register(req: Request, res: Response) {
   const parseResult = User.safeParse(req.body);
 
   if (!parseResult.success) {
-    return res.status(422).json({ message: "error", error: "Malformed data" });
+    return res
+      .status(422)
+      .json({ status: "error", error: formatZodError(parseResult.error) });
   }
 
   const userData = parseResult.data;
@@ -36,13 +38,16 @@ export async function register(req: Request, res: Response) {
     if (!newUser) {
       return res
         .status(500)
-        .json({ message: "error", data: "something went wrong" });
+        .json({
+          status: "error",
+          error: formatRegularErrorMessage("something went wrong"),
+        });
     }
 
     const session = await lucia.createSession(newUser.insertedId, {});
     return res
       .status(200)
-      .json({ message: "success", data: { sessionId: session.id } });
+      .json({ status: "success", data: { sessionId: session.id } });
   } catch (error) {
     if (
       error instanceof SqliteError &&
@@ -50,14 +55,20 @@ export async function register(req: Request, res: Response) {
     ) {
       return res
         .status(400)
-        .json({ message: "error", data: { error: "Username already exists" } });
+        .json({
+          status: "error",
+          error: formatRegularErrorMessage("Username already exists"),
+        });
     }
 
     console.log("Error:", error);
 
     return res
       .status(500)
-      .json({ message: "error", data: { error: "An unknown error occured" } });
+      .json({
+        status: "error",
+        error: formatRegularErrorMessage("An unknown error occured"),
+      });
   }
 }
 
@@ -67,7 +78,7 @@ export async function login(req: Request, res: Response) {
   if (!parseResult.success) {
     return res
       .status(400)
-      .json({ message: "error", data: formatZodError(parseResult.error) });
+      .json({ status: "error", error: formatZodError(parseResult.error) });
   }
 
   const data = parseResult.data;
@@ -84,7 +95,10 @@ export async function login(req: Request, res: Response) {
     if (!dbUser) {
       return res
         .status(400)
-        .json({ message: "error", error: "Invalid username or password" });
+        .json({
+          status: "error",
+          error: formatRegularErrorMessage("Invalid username or password"),
+        });
     }
 
     // validate password
@@ -97,19 +111,25 @@ export async function login(req: Request, res: Response) {
     if (!isValidPassword) {
       return res
         .status(400)
-        .json({ message: "error", error: "Invalid username or password" });
+        .json({
+          status: "error",
+          error: formatRegularErrorMessage("Invalid username or password"),
+        });
     }
 
     const session = await lucia.createSession(dbUser.id, {});
 
     return res
       .status(200)
-      .json({ message: "success", data: { sessionId: session.id } });
+      .json({ status: "success", data: { sessionId: session.id } });
   } catch (error) {
     console.log("Error:", error);
     return res
       .status(500)
-      .json({ message: "error", data: { error: "An unknown error occured" } });
+      .json({
+        status: "error",
+        error: formatRegularErrorMessage("An unknown error occured"),
+      });
   }
 }
 
@@ -121,11 +141,15 @@ export async function logout(req: Request, res: Response) {
 
   await lucia.invalidateSession(sessionId);
 
-  return res.status(200).json({ message: "success", data: null });
+  return res.status(200).json({ status: "success", data: null });
 }
 
 function formatZodError(
   error: ZodError<{ username: string; password: string }>
 ) {
   return error.issues.map(({ message, path }) => ({ message, path }));
+}
+
+function formatRegularErrorMessage(errorMsg: string) {
+  return [{ message: errorMsg }];
 }
