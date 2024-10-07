@@ -6,11 +6,6 @@ import { Lucia, TimeSpan } from "lucia";
 const adapter = new DrizzleSQLiteAdapter(db, session, user);
 
 export const lucia = new Lucia(adapter, {
-  sessionCookie: {
-    attributes: {
-      secure: process.env.NODE_ENV === "production",
-    },
-  },
   sessionExpiresIn: new TimeSpan(1, "d"),
   getUserAttributes: (attributes) => {
     return {
