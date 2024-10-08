@@ -21,7 +21,7 @@ export async function authMiddleware(
       return res.status(401).end();
     }
 
-    req.body.user = { ...user };
+    req.user = user;
 
     next();
   } catch (error) {
