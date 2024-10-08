@@ -45,6 +45,9 @@ export async function register(req: Request, res: Response) {
       });
     }
 
+    // delete expired sessions from db
+    await lucia.deleteExpiredSessions();
+
     const session = await lucia.createSession(newUser.insertedId, {});
     return res
       .status(200)
@@ -109,6 +112,9 @@ export async function login(req: Request, res: Response) {
         error: formatRegularErrorMessage("Invalid username or password"),
       });
     }
+
+    // delete expired sessions from db
+    await lucia.deleteExpiredSessions();
 
     const session = await lucia.createSession(dbUser.id, {});
 

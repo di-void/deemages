@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 3000;
 
 const server = express();
 
-server.use(express.json());
+server.use(express.json({ limit: "5mb" }));
 server.use("/api/v1", mainRouter);
 
 server.listen(PORT, () => {

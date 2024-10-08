@@ -1,18 +1,20 @@
 import { Request, Response } from "express";
-import { UploadImage } from "../utils/validators";
+import { UserType } from "../utils/validators";
 import { formatRegularErrorMessage } from "../utils/helpers";
 
-export function upload(req: Request, res: Response) {
-  const result = UploadImage.safeParse(req.body);
+export function uploadImage(req: Request, res: Response) {
+  const user = req.user as UserType;
+  console.log("User:", user);
 
-  if (!result.success) {
-    return res.status(400).json({
-      status: "error",
-      error: formatRegularErrorMessage("Malformed data"),
-    });
-  }
+  // get image data from request
+  // validate image size within defined limits
+  // validate image file type
+  // if validation passes, compress the image
+  // store to disk
+  // get storage path
+  // write path to db
 
-  const { user } = result.data;
-
-  res.status(200).json({ message: `hello images, from ${user.username}` });
+  res
+    .status(200)
+    .json({ message: "Success", data: { file: { path: req.file?.path } } });
 }
