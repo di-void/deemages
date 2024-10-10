@@ -4,7 +4,7 @@ import { formatRegularErrorMessage, generatePublicURL } from "../utils/helpers";
 import sharp from "sharp";
 import fs from "node:fs";
 import { db } from "../db";
-import { Dimension, FileTypeOptions, image, type NewImage } from "../db/schema";
+import { FileTypeOptions, image, type NewImage } from "../db/schema";
 
 const HUNDRED_KB = 100 * 1024;
 
@@ -37,8 +37,6 @@ export async function uploadImage(req: Request, res: Response) {
       height: metadata.height ?? 0,
       fileName: uploadedImage.filename,
     };
-
-    // console.log("New Image Record:", newImageRecord);
 
     // write path to db
     await db.insert(image).values(newImageRecord);

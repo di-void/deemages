@@ -25,11 +25,6 @@ export const user = sqliteTable(
   (table) => ({ usernameIdx: uniqueIndex("username_idx").on(table.username) })
 );
 
-export type Dimension = {
-  width: number;
-  height: number;
-};
-
 export type FileTypeOptions = "jpeg" | "png";
 
 export type NewImage = typeof image.$inferInsert;
