@@ -1,6 +1,5 @@
 /node_modules
 /dist
-/public/uploads
-/public/transformed
+uploads
 .env
 sqlite.db
