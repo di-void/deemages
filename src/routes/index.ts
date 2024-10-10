@@ -13,8 +13,4 @@ mainRouter.use(serveStatic("public/images/uploads"));
 // serve transformed images
 mainRouter.use(serveStatic("public/images/transforms"));
 
-mainRouter.get("/test", (req, res) => {
-  res.send("Hello world");
-});
-
 export { mainRouter };
