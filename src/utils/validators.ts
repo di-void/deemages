@@ -14,9 +14,6 @@ export const User = zod.object({
 
 export type UserType = zod.infer<typeof User>;
 
-export const UploadImage = zod.object({
-  user: User,
-  // more to come
-});
+export const Mime = zod.enum(["image/png", "image/jpeg"]);
 
-export type UploadImageType = zod.infer<typeof UploadImage>;
+export type MimeType = zod.infer<typeof Mime>;

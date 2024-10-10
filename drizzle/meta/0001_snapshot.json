@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "55e2923c-8885-44ef-89de-e0309bb4687c",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "446cbd70-7679-4e98-8310-7a19bab8d490",
+  "prevId": "55e2923c-8885-44ef-89de-e0309bb4687c",
   "tables": {
     "images": {
       "name": "images",
@@ -35,11 +35,25 @@
           "notNull": true,
           "autoincrement": false
         },
-        "dimensions": {
-          "name": "dimensions",
+        "file_name": {
+          "name": "file_name",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
           "autoincrement": false
         },
         "created_at": {
