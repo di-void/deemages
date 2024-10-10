@@ -25,21 +25,25 @@ export const user = sqliteTable(
   (table) => ({ usernameIdx: uniqueIndex("username_idx").on(table.username) })
 );
 
-type Dimension = {
+export type Dimension = {
   width: number;
   height: number;
 };
+
+export type FileTypeOptions = "jpeg" | "png";
+
+export type NewImage = typeof image.$inferInsert;
 
 export const image = sqliteTable(
   "images",
   {
     id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
     storagePath: text("storage_path").notNull(),
-    fileType: text("file_type", { enum: ["png", "jpeg"] })
-      .$type<"png" | "jpeg">()
-      .notNull(),
+    fileType: text("file_type").$type<FileTypeOptions>().notNull(),
     fileSize: integer("file_size", { mode: "number" }).notNull(),
-    dimensions: text("dimensions").$type<Dimension>(),
+    fileName: text("file_name").notNull(),
+    width: integer("width", { mode: "number" }).notNull(),
+    height: integer("height", { mode: "number" }).notNull(),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .default(sql`(unixepoch())`),
