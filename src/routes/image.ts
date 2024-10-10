@@ -5,6 +5,7 @@ import { uploadImage } from "../controllers/image";
 import { fileFilter } from "../utils/helpers";
 import multer from "multer";
 import { FILE_STORAGE_LOCATION } from "../config";
+import shortUUID from "short-uuid";
 
 const disk = multer.diskStorage({
   // image upload destionation
@@ -12,8 +13,11 @@ const disk = multer.diskStorage({
 
   filename: function (_req, file, cb) {
     const ext = "." + file.mimetype.split("/")[1];
+
     // custom file name
-    const filename = file.fieldname + "-" + Date.now() + ext;
+    const uid = shortUUID().generate();
+    const filename = file.fieldname + "-" + uid + ext;
+
     cb(null, filename);
   },
 });
