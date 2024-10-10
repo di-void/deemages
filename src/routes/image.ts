@@ -4,12 +4,12 @@ import { validateUser } from "../middleware/user";
 import { uploadImage } from "../controllers/image";
 import { fileFilter } from "../utils/helpers";
 import multer from "multer";
-import { FILE_STORAGE_LOCATION } from "../config";
+import { FILE_UPLOAD_LOCATION } from "../config";
 import shortUUID from "short-uuid";
 
 const disk = multer.diskStorage({
   // image upload destionation
-  destination: FILE_STORAGE_LOCATION,
+  destination: `public/images/${FILE_UPLOAD_LOCATION}`,
 
   filename: function (_req, file, cb) {
     const ext = "." + file.mimetype.split("/")[1];
@@ -25,8 +25,8 @@ const disk = multer.diskStorage({
 // TODO: error handling for Multer errors
 const upload = multer({
   storage: disk,
-  //   1mb max
-  limits: { fileSize: 1_000_000, fields: 0, files: 1 },
+  //   ~500kb max
+  limits: { fileSize: 500_000, fields: 0, files: 1 },
   fileFilter,
 });
 

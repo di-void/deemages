@@ -9,7 +9,9 @@ mainRouter.use("/auth", authRouter);
 mainRouter.use("/images", imageRouter);
 
 // serve uploaded images
-mainRouter.use(serveStatic("public/images"));
+mainRouter.use(serveStatic("public/images/uploads"));
+// serve transformed images
+mainRouter.use(serveStatic("public/images/transforms"));
 
 mainRouter.get("/test", (req, res) => {
   res.send("Hello world");
