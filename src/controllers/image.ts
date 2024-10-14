@@ -1,8 +1,20 @@
 import { Request, Response } from "express";
-import { UserType } from "../utils/validators";
-import { formatRegularErrorMessage, generatePublicURL } from "../utils/helpers";
+import {
+  CropType,
+  FormatType,
+  Params,
+  ResizeType,
+  Transformations,
+  UserType,
+} from "../utils/validators";
+import {
+  formatRegularErrorMessage,
+  formatZodError,
+  generatePublicURL,
+} from "../utils/helpers";
 import sharp from "sharp";
 import fs from "node:fs";
+import { Buffer } from "node:buffer";
 import { db } from "../db";
 import { FileTypeOptions, image, type NewImage } from "../db/schema";
 
@@ -68,4 +80,107 @@ export async function uploadImage(req: Request, res: Response) {
       error: formatRegularErrorMessage("something went wrong"),
     });
   }
+}
+
+export async function transformImage(req: Request, res: Response) {
+  // resize
+  // crop
+  // change format (e.g png -> jpeg)
+
+  const imageIdResult = Params.safeParse(req.params);
+
+  if (!imageIdResult.success) {
+    return res.status(400).json({
+      message: "error",
+      error: formatRegularErrorMessage("Invalid ID"),
+    });
+  }
+
+  const { imageId } = imageIdResult.data;
+
+  const transResult = Transformations.safeParse(req.body);
+
+  if (!transResult.success) {
+    return res.status(400).json({
+      message: "error",
+      error: formatZodError(transResult.error),
+    });
+  }
+
+  const transformations = transResult.data.transformations;
+
+  // are there transformations?
+  let isTransformationPresent = false;
+
+  // fetch image data into buffer
+  let imageBuffer = Buffer.alloc(0);
+
+  for (let key in transformations) {
+    const tKey = key as keyof typeof transformations;
+
+    if (transformations[tKey]) {
+      isTransformationPresent = true;
+      const options = transformations[tKey];
+
+      switch (tKey) {
+        case "resize": {
+          // resize image
+          imageBuffer = await resizeImage(imageBuffer, options as ResizeType);
+
+          break;
+        }
+
+        case "format": {
+          // change image format
+          imageBuffer = await changeImageFormat(
+            imageBuffer,
+            options as FormatType
+          );
+
+          break;
+        }
+
+        case "crop": {
+          // crop image
+          imageBuffer = await cropImage(imageBuffer, options as CropType);
+
+          break;
+        }
+
+        default: {
+          continue;
+        }
+      }
+    }
+  }
+
+  if (!isTransformationPresent) {
+    return res
+      .status(422)
+      .json({ message: "error", error: "No transformations" });
+  }
+
+  // write image data to file with same name with `tr` prefix
+  // to uploads directory
+  // return transformed image link with metadata in response
+}
+
+// transformation functions
+
+async function resizeImage(data: Buffer, params: ResizeType): Promise<Buffer> {
+  // resize image
+  return Buffer.from([]);
+}
+
+async function cropImage(data: Buffer, params: CropType): Promise<Buffer> {
+  // crop image
+  return Buffer.from([]);
+}
+
+async function changeImageFormat(
+  data: Buffer,
+  params: FormatType
+): Promise<Buffer> {
+  // change image format
+  return Buffer.from([]);
 }

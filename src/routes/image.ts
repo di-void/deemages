@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth";
 import { validateUser } from "../middleware/user";
-import { uploadImage } from "../controllers/image";
+import { transformImage, uploadImage } from "../controllers/image";
 import { fileFilter } from "../utils/helpers";
 import multer from "multer";
 import { FILE_UPLOAD_LOCATION } from "../config";
@@ -36,5 +36,6 @@ const imageRouter = Router();
 imageRouter.use([authMiddleware, validateUser]);
 
 imageRouter.post("/", upload.single("image"), uploadImage);
+imageRouter.post("/:imageId/transform", transformImage);
 
 export { imageRouter };
