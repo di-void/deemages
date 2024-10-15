@@ -4,12 +4,12 @@ import { validateUser } from "../middleware/user";
 import { transformImage, uploadImage } from "../controllers/image";
 import { fileFilter } from "../utils/helpers";
 import multer from "multer";
-import { FILE_UPLOAD_LOCATION } from "../config";
+import { FILE_UPLOAD_LOCATION, PUBLIC_IMAGES_PATH } from "../config";
 import shortUUID from "short-uuid";
 
 const disk = multer.diskStorage({
   // image upload destionation
-  destination: `public/images/${FILE_UPLOAD_LOCATION}`,
+  destination: `${PUBLIC_IMAGES_PATH}/${FILE_UPLOAD_LOCATION}`,
 
   filename: function (_req, file, cb) {
     const ext = "." + file.mimetype.split("/")[1];

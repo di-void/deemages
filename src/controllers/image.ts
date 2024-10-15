@@ -8,17 +8,23 @@ import {
   UserType,
 } from "../utils/validators";
 import {
+  formatImageMeta,
   formatRegularErrorMessage,
   formatZodError,
   generatePublicURL,
 } from "../utils/helpers";
 import sharp from "sharp";
 import fs from "node:fs";
+import path from "node:path";
 import { Buffer } from "node:buffer";
+import { randomUUID } from "node:crypto";
 import { db } from "../db";
 import { FileTypeOptions, image, type NewImage } from "../db/schema";
+import { and, eq } from "drizzle-orm";
+import { FILE_UPLOAD_LOCATION, PUBLIC_IMAGES_PATH } from "../config";
 
 const HUNDRED_KB = 100 * 1024;
+const UPLOAD_LOCATION = `${PUBLIC_IMAGES_PATH}/${FILE_UPLOAD_LOCATION}`;
 
 export async function uploadImage(req: Request, res: Response) {
   const user = req.user as UserType;
@@ -56,14 +62,12 @@ export async function uploadImage(req: Request, res: Response) {
     // filename, request
     const publicUrl = generatePublicURL(newImageRecord.fileName, req);
 
-    const size =
-      newImageRecord.fileSize > 0 ? newImageRecord.fileSize / 1024 : 0;
-
-    const meta = {
-      fileSize: `${size.toFixed(2)}kb`,
-      dimensions: `${newImageRecord.width} x ${newImageRecord.height}`,
-      fileType: newImageRecord.fileType,
-    };
+    const meta = formatImageMeta({
+      width: newImageRecord.width,
+      height: newImageRecord.height,
+      size: newImageRecord.fileSize,
+      type: newImageRecord.fileType,
+    });
 
     res.status(200).json({
       message: "success",
@@ -86,6 +90,7 @@ export async function transformImage(req: Request, res: Response) {
   // resize
   // crop
   // change format (e.g png -> jpeg)
+  const authedUser = req.user as UserType;
 
   const imageIdResult = Params.safeParse(req.params);
 
@@ -95,8 +100,6 @@ export async function transformImage(req: Request, res: Response) {
       error: formatRegularErrorMessage("Invalid ID"),
     });
   }
-
-  const { imageId } = imageIdResult.data;
 
   const transResult = Transformations.safeParse(req.body);
 
@@ -113,63 +116,119 @@ export async function transformImage(req: Request, res: Response) {
   let isTransformationPresent = false;
 
   // fetch image data into buffer
-  let imageBuffer = Buffer.alloc(0);
+  const { imageId } = imageIdResult.data;
+  try {
+    const imgData = await db
+      .select({ filePath: image.storagePath, fileName: image.fileName })
+      .from(image)
+      .where(and(eq(image.id, imageId), eq(image.userId, authedUser.id)));
 
-  for (let key in transformations) {
-    const tKey = key as keyof typeof transformations;
+    if (imgData.length === 0) {
+      return res.status(404).json({
+        message: "error",
+        error: formatRegularErrorMessage("Image Not Found"),
+      });
+    }
 
-    if (transformations[tKey]) {
-      isTransformationPresent = true;
-      const options = transformations[tKey];
+    const { filePath, fileName } = imgData[0]!;
 
-      switch (tKey) {
-        case "resize": {
-          // resize image
-          imageBuffer = await resizeImage(imageBuffer, options as ResizeType);
+    let imageBuffer = fs.readFileSync(filePath);
 
-          break;
-        }
+    for (let key in transformations) {
+      const tKey = key as keyof typeof transformations;
 
-        case "format": {
-          // change image format
-          imageBuffer = await changeImageFormat(
-            imageBuffer,
-            options as FormatType
-          );
+      if (transformations[tKey]) {
+        isTransformationPresent = true;
+        const options = transformations[tKey];
 
-          break;
-        }
+        switch (tKey) {
+          case "resize": {
+            // resize image
+            imageBuffer = await resizeImage(imageBuffer, options as ResizeType);
 
-        case "crop": {
-          // crop image
-          imageBuffer = await cropImage(imageBuffer, options as CropType);
+            break;
+          }
 
-          break;
-        }
+          case "format": {
+            // change image format
+            imageBuffer = await changeImageFormat(
+              imageBuffer,
+              options as FormatType
+            );
 
-        default: {
-          continue;
+            break;
+          }
+
+          case "crop": {
+            // crop image
+            imageBuffer = await cropImage(imageBuffer, options as CropType);
+
+            break;
+          }
+
+          default: {
+            continue;
+          }
         }
       }
     }
-  }
 
-  if (!isTransformationPresent) {
-    return res
-      .status(422)
-      .json({ message: "error", error: "No transformations" });
-  }
+    if (!isTransformationPresent) {
+      return res
+        .status(422)
+        .json({ message: "error", error: "No transformations" });
+    }
 
-  // write image data to file with same name with `tr` prefix
-  // to uploads directory
-  // return transformed image link with metadata in response
+    // write image data to file with same name with `tr` prefix
+    const newFileName = `tr-${randomUUID().slice(-6)}-${fileName}`;
+    const writePath = path.normalize(`${UPLOAD_LOCATION}/${newFileName}`);
+
+    fs.writeFileSync(writePath, imageBuffer);
+
+    const metadata = await sharp(imageBuffer).metadata();
+
+    const newImageRecord: NewImage = {
+      userId: authedUser.id,
+      fileName: newFileName,
+      fileSize: metadata.size ?? 0,
+      fileType: metadata.format as FileTypeOptions,
+      height: metadata.height ?? 0,
+      width: metadata.width ?? 0,
+      storagePath: writePath,
+    };
+
+    await db.insert(image).values(newImageRecord);
+
+    const publicUrl = generatePublicURL(newFileName, req);
+
+    const meta = formatImageMeta({
+      width: newImageRecord.width,
+      height: newImageRecord.height,
+      size: newImageRecord.fileSize,
+      type: newImageRecord.fileType,
+    });
+
+    // return transformed image link with metadata in response
+    return res.status(200).json({
+      message: "success",
+      data: { msg: "File transformed successfully", url: publicUrl, meta },
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: "error",
+      error: formatRegularErrorMessage("something went wrong"),
+    });
+  }
 }
 
 // transformation functions
-
 async function resizeImage(data: Buffer, params: ResizeType): Promise<Buffer> {
-  // resize image
-  return Buffer.from([]);
+  const resized = await sharp(data)
+    .resize({ width: params.width, height: params.height })
+    .toBuffer();
+  return resized;
 }
 
 async function cropImage(data: Buffer, params: CropType): Promise<Buffer> {
