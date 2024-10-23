@@ -54,6 +54,15 @@ export const image = sqliteTable(
   (table) => ({ userIdIdx: index("user_id_idx").on(table.userId) })
 );
 
+export const imagePartialSelect = {
+  imgId: image.id,
+  name: image.fileName,
+  size: image.fileSize,
+  width: image.width,
+  height: image.height,
+  type: image.fileType,
+};
+
 export const session = sqliteTable("sessions", {
   id: text("id").primaryKey(),
   expiresAt: integer("expires_at").notNull(),

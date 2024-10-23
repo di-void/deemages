@@ -4,6 +4,7 @@ import { validateUser } from "../middleware/user";
 import {
   listImages,
   listTransforms,
+  retrieveImage,
   transformImage,
   uploadImage,
 } from "../controllers/image";
@@ -44,5 +45,6 @@ imageRouter.post("/", upload.single("image"), uploadImage);
 imageRouter.post("/:imageId/transform", transformImage);
 imageRouter.get("/", listImages);
 imageRouter.get("/transforms", listTransforms);
+imageRouter.get("/:imageId", retrieveImage);
 
 export { imageRouter };
