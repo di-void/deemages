@@ -48,7 +48,6 @@ export async function retrieveImage(req: Request, res: Response) {
     });
   }
 
-  //   get requested image id
   const { imageId } = imageIdResult.data;
 
   try {
