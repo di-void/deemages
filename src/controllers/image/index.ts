@@ -6,25 +6,70 @@ import {
   ResizeType,
   Transformations,
   UserType,
-} from "../utils/validators";
+} from "../../utils/validators";
 import {
   formatImageMeta,
   formatRegularErrorMessage,
   formatZodError,
   generatePublicURL,
-} from "../utils/helpers";
+  mapImageList,
+} from "../../utils/helpers";
 import sharp from "sharp";
 import fs from "node:fs";
 import path from "node:path";
-import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
-import { db } from "../db";
-import { FileTypeOptions, image, type NewImage } from "../db/schema";
+import { db } from "../../db";
+import {
+  FileTypeOptions,
+  image as imageTable,
+  type NewImage,
+} from "../../db/schema";
 import { and, eq } from "drizzle-orm";
-import { FILE_UPLOAD_LOCATION, PUBLIC_IMAGES_PATH } from "../config";
+import { FILE_UPLOAD_LOCATION, PUBLIC_IMAGES_PATH } from "../../config";
+import { changeImageFormat, cropImage, resizeImage } from "./transformers";
 
 const HUNDRED_KB = 100 * 1024;
 const UPLOAD_LOCATION = `${PUBLIC_IMAGES_PATH}/${FILE_UPLOAD_LOCATION}`;
+
+export async function listImages(req: Request, res: Response) {
+  const user = req.user as UserType;
+
+  try {
+    // get all images belonging to authed user
+    const result = await db
+      .select({
+        imgId: imageTable.id,
+        name: imageTable.fileName,
+        size: imageTable.fileSize,
+        width: imageTable.width,
+        height: imageTable.height,
+        type: imageTable.fileType,
+      })
+      .from(imageTable)
+      .where(eq(imageTable.userId, user.id));
+
+    // are there results?
+    if (result.length === 0) {
+      return res.status(200).json({
+        message: "success",
+        data: {
+          msg: "You have no uploaded images yet.",
+        },
+      });
+    }
+
+    const mappedResults = mapImageList(result, req);
+
+    return res.status(200).json({ message: "success", data: mappedResults });
+  } catch (error) {
+    console.error("`ListImages`:", error);
+
+    return res.status(500).json({
+      message: "error",
+      error: formatRegularErrorMessage("something went wrong"),
+    });
+  }
+}
 
 export async function uploadImage(req: Request, res: Response) {
   const user = req.user as UserType;
@@ -57,7 +102,7 @@ export async function uploadImage(req: Request, res: Response) {
     };
 
     // write path to db
-    await db.insert(image).values(newImageRecord);
+    await db.insert(imageTable).values(newImageRecord);
 
     // filename, request
     const publicUrl = generatePublicURL(newImageRecord.fileName, req);
@@ -74,7 +119,7 @@ export async function uploadImage(req: Request, res: Response) {
       data: { msg: "File uploaded successfully", url: publicUrl, meta },
     });
   } catch (error) {
-    console.error(error);
+    console.error("`UploadImage", error);
     // TODO: might want to clear uploaded images on failure
     // because the images will have gotten through
     // and successfully uploaded by the time this handler runs
@@ -119,19 +164,24 @@ export async function transformImage(req: Request, res: Response) {
   const { imageId } = imageIdResult.data;
 
   try {
-    const imgData = await db
-      .select({ filePath: image.storagePath, fileName: image.fileName })
-      .from(image)
-      .where(and(eq(image.id, imageId), eq(image.userId, authedUser.id)));
+    const imgResult = await db
+      .select({
+        filePath: imageTable.storagePath,
+        fileName: imageTable.fileName,
+      })
+      .from(imageTable)
+      .where(
+        and(eq(imageTable.id, imageId), eq(imageTable.userId, authedUser.id))
+      );
 
-    if (imgData.length === 0) {
+    if (imgResult.length === 0) {
       return res.status(404).json({
         message: "error",
         error: formatRegularErrorMessage("Image Not Found"),
       });
     }
 
-    const { filePath, fileName } = imgData[0]!;
+    const { filePath, fileName } = imgResult[0]!;
 
     // get image data
     let imageBuffer = fs.readFileSync(filePath);
@@ -210,7 +260,7 @@ export async function transformImage(req: Request, res: Response) {
       storagePath: writePath,
     };
 
-    await db.insert(image).values(newImageRecord);
+    await db.insert(imageTable).values(newImageRecord);
 
     const publicUrl = generatePublicURL(newFileName, req);
 
@@ -227,43 +277,11 @@ export async function transformImage(req: Request, res: Response) {
       data: { msg: "File transformed successfully", url: publicUrl, meta },
     });
   } catch (error) {
-    console.error(error);
+    console.error("`TransformImage`", error);
 
     return res.status(500).json({
       message: "error",
       error: formatRegularErrorMessage("something went wrong"),
     });
   }
-}
-
-// transformation functions
-async function resizeImage(data: Buffer, params: ResizeType): Promise<Buffer> {
-  // resize image
-  const resized = await sharp(data)
-    .resize({ width: params.width, height: params.height })
-    .toBuffer();
-  return resized;
-}
-
-// todo: is cropping validation necessary?
-async function cropImage(data: Buffer, params: CropType): Promise<Buffer> {
-  // crop image
-  const cropped = await sharp(data)
-    .extract({
-      left: params.x,
-      top: params.y,
-      width: params.width,
-      height: params.height,
-    })
-    .toBuffer();
-  return cropped;
-}
-
-async function changeImageFormat(
-  data: Buffer,
-  params: FormatType
-): Promise<Buffer> {
-  // change image format
-  const formatted = await sharp(data).toFormat(params).toBuffer();
-  return formatted;
 }
