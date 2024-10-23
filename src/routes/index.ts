@@ -10,7 +10,5 @@ mainRouter.use("/images", imageRouter);
 
 // serve uploaded images
 mainRouter.use(serveStatic("public/images/uploads"));
-// serve transformed images
-mainRouter.use(serveStatic("public/images/transforms"));
 
 export { mainRouter };

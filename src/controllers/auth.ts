@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import { SqliteError } from "better-sqlite3";
 import { CreateUser } from "../utils/validators";
+import { formatZodError } from "../utils/helpers";
 import { lucia } from "../utils/lucia";
 import { formatRegularErrorMessage } from "../utils/helpers";
 import { db } from "../db/index";
 import { user } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { verify, hash } from "@node-rs/argon2";
-import { ZodError } from "zod";
 
 const argonConfig = {
   memoryCost: 19456,
@@ -139,10 +139,4 @@ export async function logout(req: Request, res: Response) {
   await lucia.invalidateSession(sessionId);
 
   return res.status(200).json({ message: "success", data: null });
-}
-
-function formatZodError(
-  error: ZodError<{ username: string; password: string }>
-) {
-  return error.issues.map(({ message, path }) => ({ message, path }));
 }
