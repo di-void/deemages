@@ -117,6 +117,7 @@ export async function transformImage(req: Request, res: Response) {
 
   // fetch image data into buffer
   const { imageId } = imageIdResult.data;
+
   try {
     const imgData = await db
       .select({ filePath: image.storagePath, fileName: image.fileName })
@@ -132,43 +133,43 @@ export async function transformImage(req: Request, res: Response) {
 
     const { filePath, fileName } = imgData[0]!;
 
+    // get image data
     let imageBuffer = fs.readFileSync(filePath);
 
     for (let key in transformations) {
+      isTransformationPresent = true;
+
       const tKey = key as keyof typeof transformations;
 
-      if (transformations[tKey]) {
-        isTransformationPresent = true;
-        const options = transformations[tKey];
+      const options = transformations[tKey];
 
-        switch (tKey) {
-          case "resize": {
-            // resize image
-            imageBuffer = await resizeImage(imageBuffer, options as ResizeType);
+      switch (tKey) {
+        case "resize": {
+          // resize image
+          imageBuffer = await resizeImage(imageBuffer, options as ResizeType);
 
-            break;
-          }
+          break;
+        }
 
-          case "format": {
-            // change image format
-            imageBuffer = await changeImageFormat(
-              imageBuffer,
-              options as FormatType
-            );
+        case "format": {
+          // change image format
+          imageBuffer = await changeImageFormat(
+            imageBuffer,
+            options as FormatType
+          );
 
-            break;
-          }
+          break;
+        }
 
-          case "crop": {
-            // crop image
-            imageBuffer = await cropImage(imageBuffer, options as CropType);
+        case "crop": {
+          // crop image
+          imageBuffer = await cropImage(imageBuffer, options as CropType);
 
-            break;
-          }
+          break;
+        }
 
-          default: {
-            continue;
-          }
+        default: {
+          continue;
         }
       }
     }
@@ -179,13 +180,25 @@ export async function transformImage(req: Request, res: Response) {
         .json({ message: "error", error: "No transformations" });
     }
 
-    // write image data to file with same name with `tr` prefix
-    const newFileName = `tr-${randomUUID().slice(-6)}-${fileName}`;
-    const writePath = path.normalize(`${UPLOAD_LOCATION}/${newFileName}`);
+    // if file has been transformed before, it will
+    // have tr prefix already
+    let newFileName = fileName.split(".").at(0)!;
 
-    fs.writeFileSync(writePath, imageBuffer);
+    if (newFileName.startsWith("tr")) {
+      // `tr` + `-` + `<6>`
+      newFileName = newFileName.slice(10);
+    }
 
     const metadata = await sharp(imageBuffer).metadata();
+
+    newFileName = `tr-${randomUUID().slice(-6)}-${newFileName}.${
+      metadata.format
+    }`;
+
+    const writePath = path.normalize(`${UPLOAD_LOCATION}/${newFileName}`);
+
+    // write image data to file with same name with `tr` prefix
+    fs.writeFileSync(writePath, imageBuffer);
 
     const newImageRecord: NewImage = {
       userId: authedUser.id,
@@ -225,15 +238,25 @@ export async function transformImage(req: Request, res: Response) {
 
 // transformation functions
 async function resizeImage(data: Buffer, params: ResizeType): Promise<Buffer> {
+  // resize image
   const resized = await sharp(data)
     .resize({ width: params.width, height: params.height })
     .toBuffer();
   return resized;
 }
 
+// todo: is cropping validation necessary?
 async function cropImage(data: Buffer, params: CropType): Promise<Buffer> {
   // crop image
-  return Buffer.from([]);
+  const cropped = await sharp(data)
+    .extract({
+      left: params.x,
+      top: params.y,
+      width: params.width,
+      height: params.height,
+    })
+    .toBuffer();
+  return cropped;
 }
 
 async function changeImageFormat(
@@ -241,5 +264,6 @@ async function changeImageFormat(
   params: FormatType
 ): Promise<Buffer> {
   // change image format
-  return Buffer.from([]);
+  const formatted = await sharp(data).toFormat(params).toBuffer();
+  return formatted;
 }
