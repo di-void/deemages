@@ -12,8 +12,9 @@ import {
   formatRegularErrorMessage,
   formatZodError,
   generatePublicURL,
-  jsonifySchema,
-  mapImageList,
+  jsonifyZodSchema,
+  mapPartialImage,
+  mapPartialImageList,
 } from "../../utils/helpers";
 import sharp from "sharp";
 import fs from "node:fs";
@@ -22,6 +23,7 @@ import { randomUUID } from "node:crypto";
 import { db } from "../../db";
 import {
   FileTypeOptions,
+  imagePartialSelect,
   image as imageTable,
   type NewImage,
 } from "../../db/schema";
@@ -32,20 +34,62 @@ import { changeImageFormat, cropImage, resizeImage } from "./transformers";
 const HUNDRED_KB = 100 * 1024;
 const UPLOAD_LOCATION = `${PUBLIC_IMAGES_PATH}/${FILE_UPLOAD_LOCATION}`;
 
+export async function retrieveImage(req: Request, res: Response) {
+  // get user
+  const user = req.user as UserType;
+
+  // validate requested image id
+  const imageIdResult = Params.safeParse(req.params);
+
+  if (!imageIdResult.success) {
+    return res.status(400).json({
+      message: "error",
+      error: formatRegularErrorMessage("Invalid ID"),
+    });
+  }
+
+  const { imageId } = imageIdResult.data;
+
+  try {
+    // get image
+    const result = await db
+      .select(imagePartialSelect)
+      .from(imageTable)
+      .where(and(eq(imageTable.id, imageId), eq(imageTable.userId, user.id)));
+
+    if (result.length === 0) {
+      return res.status(404).json({
+        message: "error",
+        error: formatRegularErrorMessage("Image Not Found"),
+      });
+    }
+
+    const resultImage = result[0]!;
+    const image = mapPartialImage(resultImage);
+
+    const finalImage = {
+      ...image,
+      url: generatePublicURL(resultImage.name, req),
+    };
+
+    return res.status(200).json({ message: "success", data: finalImage });
+  } catch (error) {
+    console.error("`RetrieveImage`:", error);
+
+    return res.status(500).json({
+      message: "error",
+      error: formatRegularErrorMessage("something went wrong"),
+    });
+  }
+}
+
 export async function listImages(req: Request, res: Response) {
   const user = req.user as UserType;
 
   try {
     // get all images belonging to authed user
     const result = await db
-      .select({
-        imgId: imageTable.id,
-        name: imageTable.fileName,
-        size: imageTable.fileSize,
-        width: imageTable.width,
-        height: imageTable.height,
-        type: imageTable.fileType,
-      })
+      .select(imagePartialSelect)
       .from(imageTable)
       .where(eq(imageTable.userId, user.id));
 
@@ -59,7 +103,7 @@ export async function listImages(req: Request, res: Response) {
       });
     }
 
-    const mappedResults = mapImageList(result, req);
+    const mappedResults = mapPartialImageList(result);
 
     return res.status(200).json({ message: "success", data: mappedResults });
   } catch (error) {
@@ -76,7 +120,7 @@ export async function listImages(req: Request, res: Response) {
 export async function listTransforms(_req: Request, res: Response) {
   res
     .status(200)
-    .json({ message: "success", data: jsonifySchema(Transformations) });
+    .json({ message: "success", data: jsonifyZodSchema(Transformations) });
 }
 
 export async function uploadImage(req: Request, res: Response) {

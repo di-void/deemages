@@ -61,7 +61,7 @@ export function formatImageMeta({
   };
 }
 
-type Img = {
+export type PartialImage = {
   imgId: number;
   name: string;
   size: number;
@@ -70,33 +70,37 @@ type Img = {
   type: FileTypeOptions;
 };
 
-type MappedImg = {
-  id: Img["imgId"];
-  url: string;
+type MappedPartialImage = {
+  id: PartialImage["imgId"];
   meta: ImageMeta;
 };
 
-export function mapImageList(imageList: Img[], req: Request): MappedImg[] {
-  return imageList.map((img) => ({
-    id: img.imgId,
-    url: generatePublicURL(img.name, req),
-    meta: formatImageMeta({
-      height: img.height,
-      size: img.size,
-      type: img.type,
-      width: img.width,
-    }),
-  }));
+export function mapPartialImageList(
+  imageList: PartialImage[]
+): MappedPartialImage[] {
+  return imageList.map((img) => mapPartialImage(img));
 }
 
-export function jsonifySchema(schema: any) {
+export function mapPartialImage(image: PartialImage): MappedPartialImage {
+  return {
+    id: image.imgId,
+    meta: formatImageMeta({
+      height: image.height,
+      size: image.size,
+      type: image.type,
+      width: image.width,
+    }),
+  };
+}
+
+export function jsonifyZodSchema(schema: any) {
   // get schema shape if schema is object
   if (schema instanceof z.ZodObject) {
     const shape = schema.shape;
     const jsonLike: any = {};
 
     for (let key in shape) {
-      jsonLike[key] = jsonifySchema(shape[key]);
+      jsonLike[key] = jsonifyZodSchema(shape[key]);
     }
 
     return jsonLike;
@@ -104,7 +108,7 @@ export function jsonifySchema(schema: any) {
 
   // is schema zod optional
   if (schema instanceof z.ZodOptional) {
-    return jsonifySchema(schema.unwrap());
+    return jsonifyZodSchema(schema.unwrap());
   }
 
   // is schema zod number
