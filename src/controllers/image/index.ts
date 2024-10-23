@@ -12,6 +12,7 @@ import {
   formatRegularErrorMessage,
   formatZodError,
   generatePublicURL,
+  jsonifySchema,
   mapImageList,
 } from "../../utils/helpers";
 import sharp from "sharp";
@@ -69,6 +70,13 @@ export async function listImages(req: Request, res: Response) {
       error: formatRegularErrorMessage("something went wrong"),
     });
   }
+}
+
+// list available transforms
+export async function listTransforms(_req: Request, res: Response) {
+  res
+    .status(200)
+    .json({ message: "success", data: jsonifySchema(Transformations) });
 }
 
 export async function uploadImage(req: Request, res: Response) {

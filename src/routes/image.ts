@@ -1,7 +1,12 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth";
 import { validateUser } from "../middleware/user";
-import { listImages, transformImage, uploadImage } from "../controllers/image";
+import {
+  listImages,
+  listTransforms,
+  transformImage,
+  uploadImage,
+} from "../controllers/image";
 import { fileFilter } from "../utils/helpers";
 import multer from "multer";
 import { FILE_UPLOAD_LOCATION, PUBLIC_IMAGES_PATH } from "../config";
@@ -38,5 +43,6 @@ imageRouter.use([authMiddleware, validateUser]);
 imageRouter.post("/", upload.single("image"), uploadImage);
 imageRouter.post("/:imageId/transform", transformImage);
 imageRouter.get("/", listImages);
+imageRouter.get("/transforms", listTransforms);
 
 export { imageRouter };

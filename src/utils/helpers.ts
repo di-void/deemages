@@ -2,7 +2,7 @@ import { Request } from "express";
 import multer from "multer";
 import { Mime } from "./validators";
 import { ENVIRONMENT, PORT, API_VERSION } from "../config";
-import { ZodError } from "zod";
+import * as z from "zod";
 import { FileTypeOptions } from "../db/schema";
 
 export function formatRegularErrorMessage(errorMsg: string) {
@@ -29,7 +29,7 @@ export function generatePublicURL(fileName: string, req: Request) {
   return `${proto}://${req.hostname}${port}/api/${API_VERSION}/${fileName}`;
 }
 
-export function formatZodError<T>(error: ZodError<T>) {
+export function formatZodError<T>(error: z.ZodError<T>) {
   return error.issues.map(({ message, path }) => ({ message, path }));
 }
 
@@ -87,4 +87,41 @@ export function mapImageList(imageList: Img[], req: Request): MappedImg[] {
       width: img.width,
     }),
   }));
+}
+
+export function jsonifySchema(schema: any) {
+  // get schema shape if schema is object
+  if (schema instanceof z.ZodObject) {
+    const shape = schema.shape;
+    const jsonLike: any = {};
+
+    for (let key in shape) {
+      jsonLike[key] = jsonifySchema(shape[key]);
+    }
+
+    return jsonLike;
+  }
+
+  // is schema zod optional
+  if (schema instanceof z.ZodOptional) {
+    return jsonifySchema(schema.unwrap());
+  }
+
+  // is schema zod number
+  if (schema instanceof z.ZodNumber) {
+    return "number";
+  }
+
+  // is schema zod enum
+  if (schema instanceof z.ZodEnum) {
+    const opts = schema.options as string[];
+    return opts.join(" | ");
+  }
+
+  // is schema zod string
+  if (schema instanceof z.ZodString) {
+    return "string";
+  }
+
+  // and others...
 }
