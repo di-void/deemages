@@ -34,11 +34,8 @@ const UPLOAD_LOCATION = `${PUBLIC_IMAGES_PATH}/${FILE_UPLOAD_LOCATION}`;
 export async function listImages(req: Request, res: Response) {
   const user = req.user as UserType;
 
-  //  id
-  //  url
-  //  meta(size, dimensions, type)
   try {
-    // get all images belonging to current user
+    // get all images belonging to authed user
     const result = await db
       .select({
         imgId: imageTable.id,
