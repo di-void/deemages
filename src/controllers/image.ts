@@ -77,7 +77,7 @@ export async function uploadImage(req: Request, res: Response) {
     console.error(error);
     // TODO: might want to clear uploaded images on failure
     // because the images will have gotten through
-    // and successfully uploaded by the time handler runs
+    // and successfully uploaded by the time this handler runs
 
     return res.status(500).json({
       message: "error",
