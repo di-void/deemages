@@ -60,3 +60,31 @@ export function formatImageMeta({
     fileType: type,
   };
 }
+
+type Img = {
+  imgId: number;
+  name: string;
+  size: number;
+  width: number;
+  height: number;
+  type: FileTypeOptions;
+};
+
+type MappedImg = {
+  id: Img["imgId"];
+  url: string;
+  meta: ImageMeta;
+};
+
+export function mapImageList(imageList: Img[], req: Request): MappedImg[] {
+  return imageList.map((img) => ({
+    id: img.imgId,
+    url: generatePublicURL(img.name, req),
+    meta: formatImageMeta({
+      height: img.height,
+      size: img.size,
+      type: img.type,
+      width: img.width,
+    }),
+  }));
+}
