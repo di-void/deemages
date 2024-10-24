@@ -12,6 +12,7 @@ import { fileFilter } from "../utils/helpers";
 import multer from "multer";
 import { FILE_UPLOAD_LOCATION, PUBLIC_IMAGES_PATH } from "../config";
 import shortUUID from "short-uuid";
+import { rateLimit } from "express-rate-limit";
 
 const disk = multer.diskStorage({
   // image upload destionation
@@ -36,13 +37,20 @@ const upload = multer({
   fileFilter,
 });
 
+const limiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes window
+  limit: 10, // 10 requests limit for each IP per 5 minutes
+  legacyHeaders: false,
+  message: "Too many requests, please try again later.",
+});
+
 const imageRouter = Router();
 
 // guard
 imageRouter.use([authMiddleware, validateUser]);
 
 imageRouter.post("/", upload.single("image"), uploadImage);
-imageRouter.post("/:imageId/transform", transformImage);
+imageRouter.post("/:imageId/transform", limiter, transformImage);
 imageRouter.get("/", listImages);
 imageRouter.get("/transforms", listTransforms);
 imageRouter.get("/:imageId", retrieveImage);
