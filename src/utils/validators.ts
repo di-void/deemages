@@ -15,23 +15,25 @@ export type UserType = zod.infer<typeof User>;
 export const Mime = zod.enum(["image/png", "image/jpeg"]);
 export type MimeType = zod.infer<typeof Mime>;
 
+const StringToNumTransform = zod
+  .string()
+  .min(1)
+  .transform((val, ctx) => {
+    const parsed = parseInt(val);
+    if (isNaN(parsed)) {
+      ctx.addIssue({
+        code: zod.ZodIssueCode.custom,
+        message: "Not a number",
+      });
+
+      return zod.NEVER;
+    }
+
+    return parsed;
+  });
+
 export const Params = zod.object({
-  imageId: zod
-    .string()
-    .min(1)
-    .transform((val, ctx) => {
-      const parsed = parseInt(val);
-      if (isNaN(parsed)) {
-        ctx.addIssue({
-          code: zod.ZodIssueCode.custom,
-          message: "Not a number",
-        });
-
-        return zod.NEVER;
-      }
-
-      return parsed;
-    }),
+  imageId: StringToNumTransform,
 });
 export type ParamsType = zod.infer<typeof Params>;
 
@@ -60,3 +62,9 @@ export const Transformations = zod.object({
   }),
 });
 export type TransformationsType = zod.infer<typeof Transformations>;
+
+export const Pagination = zod.object({
+  page: StringToNumTransform.default("1"),
+  limit: StringToNumTransform.default("10"),
+});
+export type PaginationType = zod.infer<typeof Pagination>;

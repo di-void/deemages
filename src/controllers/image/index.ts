@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import {
   CropType,
   FormatType,
+  Pagination,
   Params,
   ResizeType,
   Transformations,
@@ -11,6 +12,7 @@ import {
   formatImageMeta,
   formatRegularErrorMessage,
   formatZodError,
+  generatePaginationInfo,
   generatePublicURL,
   jsonifyZodSchema,
   mapPartialImage,
@@ -27,12 +29,21 @@ import {
   image as imageTable,
   type NewImage,
 } from "../../db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { FILE_UPLOAD_LOCATION, PUBLIC_IMAGES_PATH } from "../../config";
 import { changeImageFormat, cropImage, resizeImage } from "./transformers";
 
 const HUNDRED_KB = 100 * 1024;
 const UPLOAD_LOCATION = `${PUBLIC_IMAGES_PATH}/${FILE_UPLOAD_LOCATION}`;
+
+// TODO: change multer storage to memory rather than disk
+
+// list available transforms
+export async function listTransforms(_req: Request, res: Response) {
+  res
+    .status(200)
+    .json({ message: "success", data: jsonifyZodSchema(Transformations) });
+}
 
 export async function retrieveImage(req: Request, res: Response) {
   // get user
@@ -86,15 +97,31 @@ export async function retrieveImage(req: Request, res: Response) {
 export async function listImages(req: Request, res: Response) {
   const user = req.user as UserType;
 
+  const paginateResult = Pagination.safeParse(req.query);
+
+  if (!paginateResult.success) {
+    return res
+      .status(422)
+      .json({ message: "error", error: formatZodError(paginateResult.error) });
+  }
+
+  const pageAndLimit = paginateResult.data;
+
   try {
-    // get all images belonging to authed user
-    const result = await db
-      .select(imagePartialSelect)
+    const page = pageAndLimit.page;
+    const limit = pageAndLimit.limit;
+    const offset = (page - 1) * limit;
+
+    // get image count
+    const countResult = await db
+      .select({ value: sql`count('*')`.mapWith(Number) })
       .from(imageTable)
       .where(eq(imageTable.userId, user.id));
 
-    // are there results?
-    if (result.length === 0) {
+    const count = countResult.at(0)!.value;
+
+    // are there any records?
+    if (count === 0) {
       return res.status(200).json({
         message: "success",
         data: {
@@ -103,9 +130,25 @@ export async function listImages(req: Request, res: Response) {
       });
     }
 
+    // paginate
+    let query = db
+      .select(imagePartialSelect)
+      .from(imageTable)
+      .where(eq(imageTable.userId, user.id))
+      .orderBy(asc(imageTable.id))
+      .limit(limit)
+      .offset(offset);
+
+    const result = await query;
+
     const mappedResults = mapPartialImageList(result);
 
-    return res.status(200).json({ message: "success", data: mappedResults });
+    const pagination = generatePaginationInfo({ page, limit, count });
+
+    return res.status(200).json({
+      message: "success",
+      data: { images: mappedResults, pagination },
+    });
   } catch (error) {
     console.error("`ListImages`:", error);
 
@@ -114,13 +157,6 @@ export async function listImages(req: Request, res: Response) {
       error: formatRegularErrorMessage("something went wrong"),
     });
   }
-}
-
-// list available transforms
-export async function listTransforms(_req: Request, res: Response) {
-  res
-    .status(200)
-    .json({ message: "success", data: jsonifyZodSchema(Transformations) });
 }
 
 export async function uploadImage(req: Request, res: Response) {
