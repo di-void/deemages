@@ -38,7 +38,7 @@ const upload = multer({
 });
 
 const limiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes window
+  windowMs: 5 * 60 * 1000, // 5-minute window
   limit: 10, // 10 requests limit for each IP per 5 minutes
   legacyHeaders: false,
   message: "Too many requests, please try again later.",
