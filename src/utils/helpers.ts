@@ -129,3 +129,27 @@ export function jsonifyZodSchema(schema: any) {
 
   // and others...
 }
+
+export type PaginationInfo = {
+  current_page: number;
+  total_pages: number;
+  page_size: number;
+  has_next_page: boolean;
+};
+
+export function generatePaginationInfo({
+  page,
+  limit,
+  count,
+}: {
+  page: number;
+  limit: number;
+  count: number;
+}): PaginationInfo {
+  return {
+    current_page: page,
+    total_pages: Math.ceil(count / limit),
+    page_size: limit,
+    has_next_page: count - page * limit > limit,
+  };
+}
