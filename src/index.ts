@@ -1,6 +1,6 @@
 import "dotenv/config";
 import express from "express";
-import { mainRouter } from "./routes/index";
+import { mainRouter } from "./routes";
 import { PORT, API_VERSION } from "./config";
 
 const server = express();

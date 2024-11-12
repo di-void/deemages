@@ -2,6 +2,7 @@
   "name": "deemages",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "npm run build && node dist/index.js",
     "dev": "tsx watch --no-warnings ./src/index.ts",
