@@ -17,8 +17,8 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     // Transpile our TypeScript code to JavaScript
-    "module": "ESNext",
-    "moduleResolution": "node",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
     "outDir": "dist",
     "rootDir": "./src",
     "lib": ["es2022"]

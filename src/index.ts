@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
-import { mainRouter } from "./routes";
-import { PORT, API_VERSION } from "./config";
+import { mainRouter } from "./routes/index.js";
+import { PORT, API_VERSION } from "./config/index.js";
 
 const server = express();
 

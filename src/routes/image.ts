@@ -1,16 +1,16 @@
 import { Router } from "express";
-import { authMiddleware } from "../middleware/auth";
-import { validateUser } from "../middleware/user";
+import { authMiddleware } from "../middleware/auth.js";
+import { validateUser } from "../middleware/user.js";
 import {
   listImages,
   listTransforms,
   retrieveImage,
   transformImage,
   uploadImage,
-} from "../controllers/image";
-import { fileFilter } from "../utils/helpers";
+} from "../controllers/image/index.js";
+import { fileFilter } from "../utils/helpers.js";
 import multer from "multer";
-import { FILE_UPLOAD_LOCATION, PUBLIC_IMAGES_PATH } from "../config";
+import { FILE_UPLOAD_LOCATION, PUBLIC_IMAGES_PATH } from "../config/index.js";
 import shortUUID from "short-uuid";
 import { rateLimit } from "express-rate-limit";
 

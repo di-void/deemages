@@ -1,5 +1,5 @@
 import { type NextFunction, type Response, type Request } from "express";
-import { lucia } from "../utils/lucia";
+import { lucia } from "../utils/lucia.js";
 
 export async function authMiddleware(
   req: Request,

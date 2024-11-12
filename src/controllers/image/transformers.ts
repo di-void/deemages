@@ -4,7 +4,7 @@ import {
   type CropType,
   type ResizeType,
   type FormatType,
-} from "../../utils/validators";
+} from "../../utils/validators.js";
 
 export async function resizeImage(
   data: Buffer,

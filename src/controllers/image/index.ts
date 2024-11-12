@@ -7,7 +7,7 @@ import {
   type ResizeType,
   Transformations,
   type UserType,
-} from "../../utils/validators";
+} from "../../utils/validators.js";
 import {
   formatImageMeta,
   formatRegularErrorMessage,
@@ -17,21 +17,24 @@ import {
   jsonifyZodSchema,
   mapPartialImage,
   mapPartialImageList,
-} from "../../utils/helpers";
+} from "../../utils/helpers.js";
 import sharp from "sharp";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { db } from "../../db";
+import { db } from "../../db/index.js";
 import {
   type FileTypeOptions,
   imagePartialSelect,
   image as imageTable,
   type NewImage,
-} from "../../db/schema";
+} from "../../db/schema.js";
 import { and, asc, eq, sql } from "drizzle-orm";
-import { FILE_UPLOAD_LOCATION, PUBLIC_IMAGES_PATH } from "../../config";
-import { changeImageFormat, cropImage, resizeImage } from "./transformers";
+import {
+  FILE_UPLOAD_LOCATION,
+  PUBLIC_IMAGES_PATH,
+} from "../../config/index.js";
+import { changeImageFormat, cropImage, resizeImage } from "./transformers.js";
 
 const HUNDRED_KB = 100 * 1024;
 const UPLOAD_LOCATION = `${PUBLIC_IMAGES_PATH}/${FILE_UPLOAD_LOCATION}`;

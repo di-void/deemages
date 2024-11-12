@@ -1,11 +1,11 @@
 import { type Request, type Response } from "express";
 import { SqliteError } from "better-sqlite3";
-import { CreateUser } from "../utils/validators";
-import { formatZodError } from "../utils/helpers";
-import { lucia } from "../utils/lucia";
-import { formatRegularErrorMessage } from "../utils/helpers";
-import { db } from "../db/index";
-import { user } from "../db/schema";
+import { CreateUser } from "../utils/validators.js";
+import { formatZodError } from "../utils/helpers.js";
+import { lucia } from "../utils/lucia.js";
+import { formatRegularErrorMessage } from "../utils/helpers.js";
+import { db } from "../db/index.js";
+import { user } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { verify, hash } from "@node-rs/argon2";
 

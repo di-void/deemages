@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { authRouter } from "./auth";
-import { imageRouter } from "./image";
+import { authRouter } from "./auth.js";
+import { imageRouter } from "./image.js";
 import serveStatic from "serve-static";
 
 const mainRouter = Router();

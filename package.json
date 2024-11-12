@@ -6,7 +6,7 @@
   "scripts": {
     "start": "npm run build && node dist/index.js",
     "dev": "tsx watch --no-warnings ./src/index.ts",
-    "build": "rimraf dist && tsc",
+    "build": "rimraf dist && tsc -p .",
     "type-check": "tsc --noEmit",
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
