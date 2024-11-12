@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { type Request, type Response } from "express";
 import { SqliteError } from "better-sqlite3";
 import { CreateUser } from "../utils/validators";
 import { formatZodError } from "../utils/helpers";

@@ -1,12 +1,12 @@
-import { Request, Response } from "express";
+import { type Request, type Response } from "express";
 import {
-  CropType,
-  FormatType,
+  type CropType,
+  type FormatType,
   Pagination,
   Params,
-  ResizeType,
+  type ResizeType,
   Transformations,
-  UserType,
+  type UserType,
 } from "../../utils/validators";
 import {
   formatImageMeta,
@@ -24,7 +24,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { db } from "../../db";
 import {
-  FileTypeOptions,
+  type FileTypeOptions,
   imagePartialSelect,
   image as imageTable,
   type NewImage,

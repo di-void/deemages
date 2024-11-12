@@ -1,9 +1,9 @@
-import { Request } from "express";
+import { type Request } from "express";
 import multer from "multer";
 import { Mime } from "./validators";
 import { ENVIRONMENT, PORT, API_VERSION } from "../config";
 import * as z from "zod";
-import { FileTypeOptions } from "../db/schema";
+import { type FileTypeOptions } from "../db/schema";
 
 export function formatRegularErrorMessage(errorMsg: string) {
   return [{ message: errorMsg }];

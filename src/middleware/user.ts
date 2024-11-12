@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import { formatRegularErrorMessage } from "../utils/helpers";
 import { User } from "../utils/validators";
 
