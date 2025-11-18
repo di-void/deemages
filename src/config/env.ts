@@ -1,5 +1,7 @@
+import { cleanStoragePath } from "../utils/helpers.js";
+
 export const FILE_UPLOAD_LOCATION = process.env.STORAGE_PATH
-  ? `${process.env.STORAGE_PATH}`
+  ? `${cleanStoragePath(process.env.STORAGE_PATH)}`
   : "uploads";
 
 export const PUBLIC_IMAGES_PATH = "public/images";

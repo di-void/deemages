@@ -153,3 +153,11 @@ export function generatePaginationInfo({
     has_next_page: count - page * limit > limit,
   };
 }
+
+export function cleanStoragePath(path: string) {
+  if (path.startsWith("/") || path.startsWith("\\") || path.startsWith(".")) {
+    throw new Error("Remove prefixes from the storage path");
+  }
+
+  return path;
+}
